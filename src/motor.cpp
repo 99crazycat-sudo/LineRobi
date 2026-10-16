@@ -1,7 +1,7 @@
 #include "motor.h"
 
 Motor::Motor(const motor_cfg_t& cfg)
-    : _cfg(cfg), _reversed(false) {}
+    : _cfg(cfg) {}
 
 void Motor::begin() {
     pinMode(_cfg.pin_in1, OUTPUT);
@@ -9,15 +9,11 @@ void Motor::begin() {
     pinMode(_cfg.pin_en,  OUTPUT);
 }
 
-void Motor::reverse() {
-    _reversed = !_reversed;
-}
-
 void Motor::setSpeed(int speed) {
     if (speed >  _cfg.max_speed) speed =  _cfg.max_speed;
     if (speed < -_cfg.max_speed) speed = -_cfg.max_speed;
 
-    if (_cfg.invert ^ _reversed) speed = -speed;
+    if (_cfg.invert) speed = -speed;
 
     if (speed > 0) {
         digitalWrite(_cfg.pin_in1, HIGH);

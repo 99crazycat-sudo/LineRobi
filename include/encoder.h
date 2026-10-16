@@ -6,18 +6,18 @@
 
 class Encoder {
 public:
-    Encoder(const encoder_cfg_t& cfg);
+    Encoder(const motor_cfg_t& cfg); 
 
     void begin();
     void reset();
 
-    long  count();        
-    float distanceMM();  
+    long  count();
+    float distanceMM();
 
-    void tick();         
+    void tick();
 
 private:
-    const encoder_cfg_t& _cfg;
+    const motor_cfg_t& _cfg;
     volatile long _count;
 };
 

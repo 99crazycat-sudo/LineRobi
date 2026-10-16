@@ -1,11 +1,11 @@
 #include "encoder.h"
 
-Encoder::Encoder(const encoder_cfg_t& cfg)
+Encoder::Encoder(const motor_cfg_t& cfg)
     : _cfg(cfg), _count(0) {}
 
 void Encoder::begin() {
-    pinMode(_cfg.pin_a, INPUT_PULLUP);
-    pinMode(_cfg.pin_b, INPUT_PULLUP);
+    pinMode(_cfg.pin_enc_a, INPUT_PULLUP);
+    pinMode(_cfg.pin_enc_b, INPUT_PULLUP);
 }
 
 long Encoder::count() {
@@ -26,11 +26,11 @@ float Encoder::distanceMM() {
 }
 
 void Encoder::tick() {
-    bool a = digitalRead(_cfg.pin_a);
-    bool b = digitalRead(_cfg.pin_b);
+    bool a = digitalRead(_cfg.pin_enc_a);
+    bool b = digitalRead(_cfg.pin_enc_b);
 
     int8_t dir = (a == b) ? +1 : -1;
-    if (_cfg.invert) dir = -dir;
+    if (_cfg.invert) dir = -dir; 
 
     _count += dir;
 }
