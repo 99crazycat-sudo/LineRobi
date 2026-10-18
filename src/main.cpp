@@ -3,6 +3,7 @@
 #include "motor.h"
 #include "encoder.h"
 #include "sensor.h"
+#include "motion.h"
 
 #define PIN_R_SENSOR   A3
 #define PIN_L_SENSOR   A2
@@ -21,22 +22,15 @@
 
 config_t config;
 
-config_t& GetConfig(void) {
-    return config;
-}
-
-static Motor      Motor_L(config.motor_L);
-static Motor      Motor_R(config.motor_R);
-static Encoder    Enc_L(config.motor_L); 
+static Encoder    Enc_L(config.motor_L);
 static Encoder    Enc_R(config.motor_R);
+static Motor      Motor_L(config.motor_L, Enc_L);
+static Motor      Motor_R(config.motor_R, Enc_R);
 static LineSensor Sensor_L(config.sensor_L);
 static LineSensor Sensor_R(config.sensor_R);
 
-static constexpr int   DRIVE_SPEED = 60;
-static constexpr float TARGET_MM   = 200.0f;
-
-static bool  moving = false;
-static unsigned long last_print_ms = 0;
+// Создаем объект Motion
+static Motion     RobotMotion(Motor_L, Motor_R, Enc_L, Enc_R);
 
 void init_cfg(void) {
     // --- Левый мотор ---
@@ -47,7 +41,12 @@ void init_cfg(void) {
     config.motor_L.pin_enc_b = PIN_ENC_L_B;
     config.motor_L.invert    = false;
     config.motor_L.max_speed = 255;
-    config.motor_L.dead_zone = 0;
+    config.motor_L.dead_zone = 60;
+    config.motor_L.pid.kp      = 1.5f;
+    config.motor_L.pid.ki      = 3.0f;
+    config.motor_L.pid.kd      = 0.0f;
+    config.motor_L.pid.min_out = -255.0f;
+    config.motor_L.pid.max_out =  255.0f;
 
     // --- Правый мотор ---
     config.motor_R.pin_in1   = PIN_IN1_R;
@@ -57,7 +56,12 @@ void init_cfg(void) {
     config.motor_R.pin_enc_b = PIN_ENC_R_B;
     config.motor_R.invert    = true;
     config.motor_R.max_speed = 255;
-    config.motor_R.dead_zone = 0;
+    config.motor_R.dead_zone = 60;
+    config.motor_R.pid.kp      = 1.5f;
+    config.motor_R.pid.ki      = 3.0f;
+    config.motor_R.pid.kd      = 0.0f;
+    config.motor_R.pid.min_out = -255.0f;
+    config.motor_R.pid.max_out =  255.0f;
 
     // --- Датчики линии ---
     config.sensor_L.pin = PIN_L_SENSOR;
@@ -66,26 +70,6 @@ void init_cfg(void) {
 
 void isrEncoderL() { Enc_L.tick(); }
 void isrEncoderR() { Enc_R.tick(); }
-
-static float avgDistanceMM() {
-    float dL = Enc_L.distanceMM();
-    float dR = Enc_R.distanceMM();
-    return (abs(dL) + abs(dR)) * 0.5f;
-}
-
-static void startMove() {
-    Enc_L.reset();
-    Enc_R.reset();
-    moving = true;
-    Motor_L.setSpeed(DRIVE_SPEED);
-    Motor_R.setSpeed(DRIVE_SPEED);
-}
-
-static void stopMove() {
-    moving = false;
-    Motor_L.setSpeed(0);
-    Motor_R.setSpeed(0);
-}
 
 void setup() {
     Serial.begin(115200);
@@ -103,28 +87,29 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(PIN_ENC_L_A), isrEncoderL, CHANGE);
     attachInterrupt(digitalPinToInterrupt(PIN_ENC_R_A), isrEncoderR, CHANGE);
 
-    Serial.println(F("start"));
-
-    Enc_L.reset();
-    Enc_R.reset();
-
-    startMove();
+    Serial.println(F("Start Sequence"));
 }
 
 void loop() {
-    if (moving && avgDistanceMM() >= TARGET_MM) {
-        stopMove();
-        Serial.print(F("done, L=")); Serial.print(Enc_L.distanceMM(), 1);
-        Serial.print(F(" mm, R="));  Serial.print(Enc_R.distanceMM(), 1);
-        Serial.println(F(" mm"));
+    if (RobotMotion.isDone()) {
+        static int step = 0;
+        if (step == 0) {
+            RobotMotion.drive(200.0f, 150.0f);
+            step++;
+        } 
+        else if (step == 1) {
+            RobotMotion.stop(1500);
+            step++;
+        }
+        else if (step == 2) {
+            RobotMotion.turn(90.0f, 0.0f, 100.0f);
+            step++;
+        }
+        else if (step == 3) {
+            RobotMotion.turn(90.0f, 250.0f, 120.0f);
+            step++;
+        }
     }
 
-    unsigned long now = millis();
-    if (now - last_print_ms >= 100) {
-        last_print_ms = now;
-        Serial.print(F("L="));  Serial.print(Enc_L.distanceMM(), 1);
-        Serial.print(F(" R=")); Serial.print(Enc_R.distanceMM(), 1);
-        Serial.print(F(" avg=")); Serial.print(avgDistanceMM(), 1);
-        Serial.print(F(" moving=")); Serial.println(moving);
-    }
+    RobotMotion.update();
 }

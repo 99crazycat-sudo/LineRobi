@@ -30,7 +30,12 @@ void Encoder::tick() {
     bool b = digitalRead(_cfg.pin_enc_b);
 
     int8_t dir = (a == b) ? +1 : -1;
-    if (_cfg.invert) dir = -dir; 
+
+    // ЖЕСТКАЯ ИНВЕРСИЯ ДЛЯ ЛЕВОГО ЭНКОДЕРА (пин 2)
+    // Так как мы убрали enc_invert, делаем это здесь.
+    if (_cfg.pin_enc_a == 2) {
+        dir = -dir;
+    }
 
     _count += dir;
 }
