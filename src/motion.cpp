@@ -38,11 +38,11 @@ void Motion::turn(float angle_deg, float radius_mm, float speed_mm_s) {
     _eR.reset();
 
     float rad = angle_deg * PI / 180.0f;
-
+    
+    // Расстояния колес
     float dist_L = rad * (radius_mm + (WHEEL_WIDTH / 2.0f));
     float dist_R = rad * (radius_mm - (WHEEL_WIDTH / 2.0f));
 
-    // Компенсация инерции для дуг (знак сохраняется)
     float comp = 10.0f;
     if (dist_L > 0) dist_L = max(0.0f, dist_L - comp);
     if (dist_L < 0) dist_L = min(0.0f, dist_L + comp);
@@ -85,7 +85,6 @@ void Motion::update() {
         float dL = _eL.distanceMM();
         float dR = _eR.distanceMM();
 
-        // Проверка доехали ли мы до цели?
         bool done_L = (fabsf(dL - _target_dist_L) <= 2.0f) || 
                       ((_target_dist_L > 0 && dL >= _target_dist_L) || (_target_dist_L < 0 && dL <= _target_dist_L));
                       

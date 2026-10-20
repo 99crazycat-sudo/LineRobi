@@ -29,7 +29,6 @@ static Motor      Motor_R(config.motor_R, Enc_R);
 static LineSensor Sensor_L(config.sensor_L);
 static LineSensor Sensor_R(config.sensor_R);
 
-// Создаем объект Motion
 static Motion     RobotMotion(Motor_L, Motor_R, Enc_L, Enc_R);
 
 void init_cfg(void) {
@@ -71,6 +70,50 @@ void init_cfg(void) {
 void isrEncoderL() { Enc_L.tick(); }
 void isrEncoderR() { Enc_R.tick(); }
 
+// Сценарий движения
+void executeNextStep() {
+    static int step = 0;
+    
+    // Если робот не закончил движение, ничего не делаем
+    if (!RobotMotion.isDone()) return;
+
+    switch (step) {
+        case 0:
+            Serial.println("Шаг 1: Едем прямо 200 мм (скорость 150)");
+            RobotMotion.drive(200.0f, 150.0f);
+            step++;
+            break;
+        case 1:
+            Serial.println("Шаг 2: Остановка 1000 мс");
+            RobotMotion.stop(1000);
+            step++;
+            break;
+        case 2:
+            Serial.println("Шаг 3: Поворот на месте налево на 90 град");
+            RobotMotion.turn(90.0f, 0.0f, 100.0f);
+            step++;
+            break;
+        case 3:
+            Serial.println("Шаг 4: Едем по дуге вправо (радиус 150) на 90 град");
+            RobotMotion.turn(-90.0f, 150.0f, 120.0f);
+            step++;
+            break;
+        case 4:
+            Serial.println("Шаг 5: Поворот направо (радиус = половина колеи, одно колесо стоит)");
+            RobotMotion.turn(-90.0f, WHEEL_WIDTH / 2.0f, 80.0f);
+            step++;
+            break;
+        case 5:
+            Serial.println("Сценарий завершен. Ждем...");
+            RobotMotion.stop(10000);
+            step++;
+            break;
+        default:
+            // Все шаги выполнены
+            break;
+    }
+}
+
 void setup() {
     Serial.begin(115200);
     while (!Serial) {}
@@ -91,25 +134,9 @@ void setup() {
 }
 
 void loop() {
-    if (RobotMotion.isDone()) {
-        static int step = 0;
-        if (step == 0) {
-            RobotMotion.drive(200.0f, 150.0f);
-            step++;
-        } 
-        else if (step == 1) {
-            RobotMotion.stop(1500);
-            step++;
-        }
-        else if (step == 2) {
-            RobotMotion.turn(90.0f, 0.0f, 100.0f);
-            step++;
-        }
-        else if (step == 3) {
-            RobotMotion.turn(90.0f, 250.0f, 120.0f);
-            step++;
-        }
-    }
+    // 1. Запускаем следующий шаг, если предыдущий завершен
+    executeNextStep();
 
+    // 2. Обновляем состояние робота (ПИД и проверка окончания движения)
     RobotMotion.update();
 }

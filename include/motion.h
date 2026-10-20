@@ -6,6 +6,7 @@
 #include "encoder.h"
 #include "config.h"
 
+// Enum вынесен в общую область видимости, чтобы main мог его использовать
 enum MotionState {
     IDLE,
     MOVING_TIME,
@@ -17,21 +18,13 @@ class Motion {
 public:
     Motion(Motor& m_left, Motor& m_right, Encoder& e_left, Encoder& e_right);
 
-    // Остановиться на заданное время (мс)
     void stop(unsigned long ms);
-
-    // Ехать заданное расстояние (мм) с заданной скоростью (мм/с)
     void drive(float distance_mm, float speed_mm_s);
-
-    // Повернуть по дуге. 
-    // angle_deg: угол в градусах (плюс - налево, минус - направо)
-    // radius_mm: радиус дуги. 0 - на месте, WHEEL_WIDTH - одно колесо стоит.
     void turn(float angle_deg, float radius_mm, float speed_mm_s);
-
-    // Обновление (вызывать в loop())
+    
     void update();
-
-    // Проверка, закончилось ли движение
+    
+    MotionState getState() const { return _state; }
     bool isDone() const { return _state == IDLE; }
 
 private:

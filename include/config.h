@@ -5,7 +5,7 @@
 
 constexpr float WHEEL_DIAMETER = 60.0f;
 constexpr int   IMP_PER_ROTATE = 982;
-constexpr float WHEEL_WIDTH    = 156.0f; // Колея (расстояние между центрами колес), мм
+constexpr float WHEEL_WIDTH    = 156.0f; // Колея, мм
 
 constexpr float WHEEL_CIRCUMFERENCE = PI * WHEEL_DIAMETER;
 constexpr float MM_PER_IMP          = WHEEL_CIRCUMFERENCE / IMP_PER_ROTATE;
